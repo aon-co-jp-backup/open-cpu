@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>open-cpu — ダウンロード / Download</title>
-<meta name="description" content="open-cpu: CPU SIMD dispatch layer (AVX2/AVX-512/PCLMULQDQ/BMI2/FMA3 runtime detection) shared by RAID6/DB/AI inference projects">
+<title>open-cpu — CPU命令セット検出ライブラリ / CPU SIMD dispatch layer</title>
+<meta name="description" content="open-cpu: CPU SIMD runtime detection and dispatch (AVX2/AVX-512/PCLMULQDQ/BMI2/FMA3) in Rust, shared by RAID, DB and AI inference projects.">
 <style>
 :root{--bg:#fff;--fg:#14181f;--sub:#57606a;--card:#f6f8fa;--line:#d0d7de;--acc:#1f6feb;--warn:#c62828;--ok:#1a7f37}
 @media (prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6edf3;--sub:#8b949e;--card:#161b22;--line:#30363d;--acc:#4a9eff;--warn:#ff7b72;--ok:#3fb950}}
@@ -29,32 +29,34 @@ footer{margin-top:40px;color:var(--sub);font-size:.88rem}
 <main>
 <h1>open-cpu</h1>
 <div class="card">
-<p><b>概要 / Overview</b>(リポジトリの記載のまま / as written in the repository)</p>
-<p>CPU SIMD dispatch layer (AVX2/AVX-512/PCLMULQDQ/BMI2/FMA3 runtime detection) shared by RAID6/DB/AI inference projects</p>
+<p><b>概要 / Overview</b></p>
+<p>`aon-co-jp`エコシステム共通の、CPU命令セット検出・ランタイムディスパッチライブラリ(Rust)。AVX2・AVX-512・PCLMULQDQ・BMI2・FMA3などを実行時に検出し、RAID・DB・AI推論の各プロジェクトで共有します。配布物はお使いのCPUの対応状況を調べる診断ツールです。</p>
+<p class="en">The shared CPU instruction-set detection and runtime-dispatch library (Rust) of the aon-co-jp ecosystem. It detects AVX2, AVX-512, PCLMULQDQ, BMI2, FMA3 and more at run time for RAID, database and AI-inference projects. The downloads are diagnostic tools that report what your CPU supports.</p>
 </div>
 
-<h2>ダウンロード / Download <small>(v0.1.0 )</small></h2>
+<h2>ダウンロード / Download <small>(v0.1.0)</small></h2>
 <p><a class="btn" href="https://github.com/aon-co-jp/open-cpu/releases/tag/v0.1.0">リリースページ(GitHub) / Release page</a></p>
 <table>
 <tr><th>対象 / For</th><th>ファイル / File</th><th>SHA-256</th></tr>
-<tr><td>Android<br><span class="en">Android</span></td>
- <td><a href="https://github.com/aon-co-jp/open-cpu/releases/download/v0.1.0/open-cpu-diag-android-arm64.tar.gz">open-cpu-diag-android-arm64.tar.gz</a> (431 KB)</td>
- <td class="hash">30b77cd3bb271aacf3adbf2bc9ae3a6d02a1a28c425098dc5dc4246b6ea3b480</td></tr>
-<tr><td>Linux<br><span class="en">Linux</span></td>
- <td><a href="https://github.com/aon-co-jp/open-cpu/releases/download/v0.1.0/open-cpu-diag-linux-x86_64.tar.gz">open-cpu-diag-linux-x86_64.tar.gz</a> (433 KB)</td>
- <td class="hash">06e9e949bb924b6d5ff33a3e3396cedd02667b5d2be59f633e037c29d5781d31</td></tr>
-<tr><td>Windows<br><span class="en">Windows</span></td>
- <td><a href="https://github.com/aon-co-jp/open-cpu/releases/download/v0.1.0/open-cpu-diag-windows-x86_64.zip">open-cpu-diag-windows-x86_64.zip</a> (189 KB)</td>
- <td class="hash">62e11c9e172ba9d21afde328d0deff7f3109f39e91e3e3b7d40f202f73de5715</td></tr>
+<tr><td>Windows (64bit)</td>
+ <td><a href="https://github.com/aon-co-jp/open-cpu/releases/download/v0.1.0/open-cpu-diag-windows-x86_64.zip">open-cpu-diag-windows-x86_64.zip</a> (190.0 KB)</td>
+ <td class="hash">80eb47077c638077311525cea751c322bebf3d50821ea3704fae84396dd0a1fd</td></tr>
+<tr><td>Linux (64bit)</td>
+ <td><a href="https://github.com/aon-co-jp/open-cpu/releases/download/v0.1.0/open-cpu-diag-linux-x86_64.tar.gz">open-cpu-diag-linux-x86_64.tar.gz</a> (421.2 KB)</td>
+ <td class="hash">32fee0ffba6c02d84d4475fdd8ec9c20a105b3474342d91a5f58705b7c86b44d</td></tr>
+<tr><td>Android (arm64)</td>
+ <td><a href="https://github.com/aon-co-jp/open-cpu/releases/download/v0.1.0/open-cpu-diag-android-arm64.tar.gz">open-cpu-diag-android-arm64.tar.gz</a> (428.6 KB)</td>
+ <td class="hash">a706af7c379ba7f9c1e6a07a73a1431f98a92b734ec438902a317b07d6ea3efc</td></tr>
 </table>
+<p class="en">ライブラリ本体は、Cargoの依存として組み込んで使います(READMEを参照)。<br>The library itself is used as a Cargo dependency (see the README).</p>
 <p class="en">ダウンロードしたら、上のSHA-256と一致するか確かめてください。署名のない配布物は、提供元を確かめてから実行してください。 / After downloading, check that the SHA-256 matches. Verify the source before running unsigned files.</p>
 
-<h2>詳細・既知の問題 / Details and known issues</h2>
+<h2>詳細 / Details</h2>
 <p>機能、使い方、対応OS、既知の問題は、<a href="https://github.com/aon-co-jp/open-cpu#readme">README(GitHub)</a>とリリースページの説明を正としてください。このページは配布物への入口です。<br>
 <span class="en">For features, usage, supported OS and known issues, the README on GitHub and the release notes are authoritative. This page is only an entrance to the downloads.</span></p>
 
 <footer>
-<p>ライセンス / License: リポジトリ参照 / see repository ・ <a href="https://github.com/aon-co-jp/open-cpu">ソースコード / Source (GitHub)</a> ・ <a href="/">easy-web.tokyo</a></p>
+<p>ライセンス / License: MIT ・ <a href="https://github.com/aon-co-jp/open-cpu">ソースコード / Source (GitHub)</a> ・ <a href="/">easy-web.tokyo</a></p>
 </footer>
 </main>
 </body>
