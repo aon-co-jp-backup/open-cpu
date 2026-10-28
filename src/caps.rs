@@ -56,7 +56,36 @@ static CAPS: OnceLock<CpuCapabilities> = OnceLock::new();
 
 /// CPU 機能を検出する(初回のみ実際に検出し、以降はキャッシュを返す)。
 pub fn detect() -> &'static CpuCapabilities {
-    CAPS.get_or_init(detect_uncached)
+    CAPS.get_or_init(|| cap_isa(detect_uncached(), std::env::var("OPEN_CPU_MAX_ISA").ok().as_deref()))
+}
+
+/// 命令セットの上限を指定された水準に絞る(`OPEN_CPU_MAX_ISA`)。
+///
+/// 値: `avx512`(または未指定/不明な値=絞らない)・`avx2`(AVX-512 系を無いことにする)・
+/// `ssse3`(AVX 系も無いことにする)・`scalar`(SIMD を一切使わない)。
+/// AVX-512 搭載機で「AVX2 しか無い機械」を再現し、フォールバック経路を実機で検証するための
+/// 仕組み(AVX2 機・古い機を手元に持たなくても全経路を試せる)。
+pub fn cap_isa(mut c: CpuCapabilities, max: Option<&str>) -> CpuCapabilities {
+    let level = match max.map(|s| s.trim().to_ascii_lowercase()).as_deref() {
+        Some("avx2") => 2,
+        Some("ssse3") | Some("sse") | Some("sse2") => 1,
+        Some("scalar") | Some("none") => 0,
+        _ => return c,
+    };
+    if level == 0 {
+        return CpuCapabilities::default();
+    }
+    c.avx512f = false;
+    c.avx512bw = false;
+    c.avx512vl = false;
+    c.avx512vnni = false;
+    if level <= 1 {
+        c.avx2 = false;
+        c.fma = false;
+        c.avx_vnni = false;
+        c.vpclmulqdq = false;
+    }
+    c
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -199,5 +228,40 @@ impl CpuCapabilities {
 impl std::fmt::Display for CpuCapabilities {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.summary())
+    }
+}
+
+#[cfg(test)]
+mod cap_tests {
+    use super::*;
+
+    fn full() -> CpuCapabilities {
+        CpuCapabilities {
+            avx2: true, avx512f: true, pclmulqdq: true, bmi1: true, bmi2: true, fma: true, aes: true,
+            popcnt: true, sha: true, sse2: true, ssse3: true, avx512bw: true, avx512vl: true,
+            avx_vnni: true, avx512vnni: true, gfni: true, vpclmulqdq: true,
+        }
+    }
+
+    #[test]
+    fn unspecified_or_unknown_keeps_everything() {
+        assert_eq!(cap_isa(full(), None), full());
+        assert_eq!(cap_isa(full(), Some("avx512")), full());
+        assert_eq!(cap_isa(full(), Some("what")), full());
+    }
+
+    #[test]
+    fn avx2_cap_hides_only_avx512() {
+        let c = cap_isa(full(), Some("avx2"));
+        assert!(c.avx2 && c.fma && c.avx_vnni && c.vpclmulqdq && c.gfni);
+        assert!(!c.avx512f && !c.avx512bw && !c.avx512vl && !c.avx512vnni);
+    }
+
+    #[test]
+    fn ssse3_cap_hides_avx_family_and_scalar_hides_all() {
+        let c = cap_isa(full(), Some("SSSE3"));
+        assert!(c.sse2 && c.ssse3 && c.pclmulqdq && c.popcnt);
+        assert!(!c.avx2 && !c.fma && !c.avx_vnni && !c.avx512f);
+        assert_eq!(cap_isa(full(), Some("scalar")), CpuCapabilities::default());
     }
 }

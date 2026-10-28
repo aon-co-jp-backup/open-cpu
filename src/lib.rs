@@ -50,7 +50,7 @@ mod math;
 #[cfg(target_os = "android")]
 mod android_jni;
 
-pub use caps::{detect, vendor_family, CpuCapabilities, CpuVendor};
+pub use caps::{cap_isa, detect, vendor_family, CpuCapabilities, CpuVendor};
 pub use inventory::{inventory, CoreGroup, CpuInventory, FeatureStatus};
 pub use isa::{
     avx512_opt_in, implemented_features, isa_summary, select, Feature, FeatureSet, IsaProfile,
