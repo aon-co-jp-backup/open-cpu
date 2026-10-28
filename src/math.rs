@@ -374,12 +374,24 @@ unsafe fn dot_f32_avx512(a: &[f32], b: &[f32]) -> f32 {
     use std::arch::x86_64::*;
     unsafe {
         let n = a.len();
-        let mut acc = _mm512_setzero_ps();
+        // FMA の遅延(約4サイクル)で止まらないよう、独立した4本の累算器で回す。
+        let mut acc0 = _mm512_setzero_ps();
+        let mut acc1 = _mm512_setzero_ps();
+        let mut acc2 = _mm512_setzero_ps();
+        let mut acc3 = _mm512_setzero_ps();
         let mut i = 0;
+        while i + 64 <= n {
+            let pa = a.as_ptr().add(i);
+            let pb = b.as_ptr().add(i);
+            acc0 = _mm512_fmadd_ps(_mm512_loadu_ps(pa), _mm512_loadu_ps(pb), acc0);
+            acc1 = _mm512_fmadd_ps(_mm512_loadu_ps(pa.add(16)), _mm512_loadu_ps(pb.add(16)), acc1);
+            acc2 = _mm512_fmadd_ps(_mm512_loadu_ps(pa.add(32)), _mm512_loadu_ps(pb.add(32)), acc2);
+            acc3 = _mm512_fmadd_ps(_mm512_loadu_ps(pa.add(48)), _mm512_loadu_ps(pb.add(48)), acc3);
+            i += 64;
+        }
+        let mut acc = _mm512_add_ps(_mm512_add_ps(acc0, acc1), _mm512_add_ps(acc2, acc3));
         while i + 16 <= n {
-            let va = _mm512_loadu_ps(a.as_ptr().add(i));
-            let vb = _mm512_loadu_ps(b.as_ptr().add(i));
-            acc = _mm512_fmadd_ps(va, vb, acc);
+            acc = _mm512_fmadd_ps(_mm512_loadu_ps(a.as_ptr().add(i)), _mm512_loadu_ps(b.as_ptr().add(i)), acc);
             i += 16;
         }
         let mut s = _mm512_reduce_add_ps(acc);
@@ -673,6 +685,33 @@ mod tests {
                 (fast - slow).abs() <= 1e-3 * (1.0 + slow.abs()),
                 "n={n} fast={fast} slow={slow}"
             );
+        }
+    }
+
+    /// AVX-512F 搭載機では、opt-in の有無に関係なく AVX-512 カーネルを直接呼んでスカラーと比べる。
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn avx512_dot_and_axpy_match_scalar_when_actually_available() {
+        if !detect().avx512f {
+            eprintln!("AVX-512F 非対応の CPU のためスキップ");
+            return;
+        }
+        for n in [0usize, 1, 3, 15, 16, 17, 31, 32, 33, 100, 1000, 4097] {
+            let a = seq(n, 1);
+            let b = seq(n, 2);
+            let fast = unsafe { dot_f32_avx512(&a, &b) };
+            let slow = dot_f32_scalar(&a, &b);
+            assert!((fast - slow).abs() <= 1e-3 * (1.0 + slow.abs()), "dot n={n} fast={fast} slow={slow}");
+
+            let src = seq(n, 3);
+            let base = seq(n, 4);
+            let mut f = base.clone();
+            let mut s = base;
+            unsafe { axpy_f32_avx512(&mut f, &src, 1.5) };
+            axpy_f32_scalar(&mut s, &src, 1.5);
+            for i in 0..n {
+                assert!((f[i] - s[i]).abs() <= 1e-5, "axpy n={n} i={i}");
+            }
         }
     }
 

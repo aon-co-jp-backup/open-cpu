@@ -628,6 +628,28 @@ mod tests {
         }
     }
 
+    /// AVX-512 搭載機(Ice Lake 等)では、opt-in の有無に関係なく AVX-512 カーネルを直接呼んで
+    /// スカラー実装と一致することを確かめる(非搭載機ではスキップ)。
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[test]
+    fn avx512_matches_scalar_when_actually_available() {
+        let c = detect();
+        if !(c.avx512f && c.avx512bw) {
+            eprintln!("AVX-512F/BW 非対応の CPU のためスキップ");
+            return;
+        }
+        for len in [0usize, 1, 15, 31, 32, 33, 63, 64, 65, 100, 1000, 4096, 4097, 65537] {
+            let src = sample(len);
+            for factor in [0u8, 1, 2, 3, 17, 0x80, 0xff, 0x1d] {
+                let mut a = sample(len);
+                let mut b = a.clone();
+                gf_mul_parity_scalar(&mut a, &src, factor);
+                unsafe { gf_mul_parity_avx512(&mut b, &src, factor) };
+                assert_eq!(a, b, "len={len} factor={factor}");
+            }
+        }
+    }
+
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[test]
     fn pclmul_matches_scalar() {

@@ -574,11 +574,15 @@ mod tests {
 
     #[test]
     fn select_prefers_first_satisfiable() {
+        // 開発機(AVX-512 非搭載)以外では最初の候補が成立しうるので、期待値は検出結果から決める
+        // (Ice Lake の VPS で、この前提が崩れて失敗した)。
         let picked = select(&[
-            ("impossible", &[Feature::Avx512vnni][..]),
+            ("first", &[Feature::Avx512vnni][..]),
             ("sse2", &[Feature::Sse2][..]),
         ]);
-        if detect().sse2 {
+        if detect().avx512vnni && avx512_opt_in() {
+            assert_eq!(picked, Some("first"));
+        } else if detect().sse2 {
             assert_eq!(picked, Some("sse2"));
         }
         // 何も要求しない候補は必ず成立する。

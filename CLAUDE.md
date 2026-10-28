@@ -383,3 +383,6 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
 **Adoption**: in `Cargo.toml`, `rust-json = { path = "../RS-JSON", features = ["fast"] }`. Example in `RS-JSON/README.md`.
 
 **Status in this repository**: Not yet applied (policy only). Code will be switched over place by place, starting where measurements show large or frequent JSON reads.
+
+- **2026-10-28 AVX-512 経路をIce Lake機(ConoHa VPS、Xeon Icelake 4コア)で実機検証**: `gf_mul_parity_avx512`・`dot_f32_avx512`・`axpy_f32_avx512` がスカラー実装と一致(端数長含む。直接呼ぶテスト `avx512_matches_scalar_when_actually_available` / `avx512_dot_and_axpy_match_scalar_when_actually_available` を追加。opt-in の有無に関係なく搭載機で実行される)。`select_prefers_first_satisfiable` の前提(「AVX-512VNNIは無い」)が搭載機で崩れていたテストの不具合も修正。
+  **実測(同機、4MiB×50回の簡易ベンチ)**: GF(2^8)乗算は AVX2 12.0GiB/s ≈ AVX-512 11.4GiB/s(メモリ帯域律速で差なし)。`dot_f32` は AVX2+FMA3 17.0〜17.7 GFLOP/s に対し AVX-512 は 4累算器に直しても 11.8〜12.5 GFLOP/s(遅い)。`axpy` は差なし。**結論: この機では AVX-512 を既定にしない(opt-in のまま)。** 速くならない理由は未調査(帯域律速・クロック低下の可能性。推測)。VNNI の演算実装は未着手。
