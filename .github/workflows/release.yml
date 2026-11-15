@@ -74,6 +74,27 @@ jobs:
           name: open-cpu-diag-windows-x86_64
           path: open-cpu-diag-windows-x86_64.zip
 
+
+  build-windows-arm64:
+    name: Windows ARM64 (Snapdragon, aarch64)
+    runs-on: windows-11-arm
+    continue-on-error: true  # Snapdragon (Windows on ARM64); never blocks the release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build diagnostic CLIs
+        run: cargo build --release --example inventory --example bench
+      - name: Package portable zip (open-cpu-diag-windows-aarch64.zip)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist-zip | Out-Null
+          Copy-Item target\release\examples\inventory.exe dist-zip\open-cpu-inventory.exe
+          Copy-Item target\release\examples\bench.exe dist-zip\open-cpu-bench.exe
+          Compress-Archive -Path dist-zip\open-cpu-inventory.exe,dist-zip\open-cpu-bench.exe -DestinationPath open-cpu-diag-windows-aarch64.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-cpu-diag-windows-aarch64
+          path: open-cpu-diag-windows-aarch64.zip
+
   build-android:
     name: Android (aarch64, arm64-v8a)
     runs-on: ubuntu-latest
@@ -115,7 +136,7 @@ jobs:
 
   release:
     name: GitHub Releaseへ添付
-    needs: [build-linux, build-windows, build-android]
+    needs: [build-linux, build-windows, build-windows-arm64, build-android]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
