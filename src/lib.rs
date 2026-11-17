@@ -40,6 +40,7 @@
 
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+mod bytes;
 mod caps;
 mod gather;
 mod inventory;
@@ -50,6 +51,7 @@ mod math;
 #[cfg(target_os = "android")]
 mod android_jni;
 
+pub use bytes::{count_byte, count_byte_scalar, find_byte, find_byte_scalar, selected_byte_impl, ByteImpl};
 pub use caps::{cap_isa, detect, vendor_family, CpuCapabilities, CpuVendor};
 pub use inventory::{inventory, CoreGroup, CpuInventory, FeatureStatus};
 pub use isa::{
@@ -97,6 +99,7 @@ pub fn runtime_report() -> String {
   isa profile: {} (raw: {})
   gf impl: {:?}
   float impl: {}
+  byte scan impl: {}
   {}
   detected-but-unused: {}",
         VERSION,
@@ -105,6 +108,7 @@ pub fn runtime_report() -> String {
         caps.isa_profile_raw(),
         selected_impl(),
         selected_float_impl(),
+        selected_byte_impl(),
         bit_impl_summary(),
         caps.detected_but_unused()
     )
