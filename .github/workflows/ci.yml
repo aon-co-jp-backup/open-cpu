@@ -1,0 +1,22 @@
+name: ci
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os == 'windows-11-arm' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test (auto-selected implementations)
+        run: cargo test --release
+      - name: Which byte-scan implementation was selected, and speed
+        run: cargo run --release --example bytes_bench
+      - name: Test with the upper ISA limited (fallback paths)
+        shell: bash
+        run: |
+          OPEN_CPU_MAX_ISA=avx2 cargo test --release
+          OPEN_CPU_MAX_ISA=scalar cargo test --release
