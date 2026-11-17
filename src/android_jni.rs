@@ -19,27 +19,28 @@
 //! JSON文字列化のみ(`bench`が行う実ベンチマーク実行はまだJNI経由では
 //! 呼べない)。
 
+use jni::errors::ThrowRuntimeExAndDefault;
 use jni::objects::{JClass, JString};
-use jni::sys::jstring;
-use jni::JNIEnv;
+use jni::EnvUnowned;
 
 /// `tokyo.runo.openenglish.OpenCpuProbe.inventoryJson()`(Kotlin側)から
 /// 呼ばれるJNIエントリポイント。`crate::inventory().to_json()`をそのまま
-/// Java文字列として返す。JSON生成自体が失敗することは無い設計
-/// (`to_json`は`serde_json`のシリアライズ失敗を想定していない単純な
-/// 手書きJSON構築のため)なので、この関数はエラー処理を持たない。
+/// Java文字列として返す。jni 0.22(2026-11-18移行)で`JNIEnv`は`EnvUnowned`
+/// になり、`with_env`内でのみJNI呼び出しができる。文字列確保に失敗した場合は
+/// 固定のエラーJSONを返し、それも失敗した場合はJavaの`RuntimeException`
+/// (`ThrowRuntimeExAndDefault`)になる(旧版はnullを返していた)。
 #[no_mangle]
 pub extern "system" fn Java_tokyo_runo_openenglish_OpenCpuProbe_inventoryJson<'local>(
-    env: JNIEnv<'local>,
+    mut unowned_env: EnvUnowned<'local>,
     _class: JClass<'local>,
-) -> jstring {
-    let json = crate::inventory().to_json();
-    let output: JString = match env.new_string(json) {
-        Ok(s) => s,
-        Err(_) => match env.new_string("{\"error\":\"failed to allocate JNI string\"}") {
-            Ok(s) => s,
-            Err(_) => return std::ptr::null_mut(),
-        },
-    };
-    output.into_raw()
+) -> JString<'local> {
+    unowned_env
+        .with_env(|env| -> jni::errors::Result<JString<'local>> {
+            let json = crate::inventory().to_json();
+            match env.new_string(json) {
+                Ok(s) => Ok(s),
+                Err(_) => env.new_string("{\"error\":\"failed to allocate JNI string\"}"),
+            }
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
 }
