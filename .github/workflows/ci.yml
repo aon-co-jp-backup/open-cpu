@@ -13,6 +13,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Test (auto-selected implementations)
         run: cargo test --release
+      - name: open-cpu-remote (loopback worker, fallback)
+        run: cargo test --release --manifest-path remote/Cargo.toml
       - name: Which byte-scan implementation was selected, and speed
         run: cargo run --release --example bytes_bench
       - name: Test with the upper ISA limited (fallback paths)

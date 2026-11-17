@@ -1,0 +1,22 @@
+[package]
+name = "open-cpu-remote"
+version = "0.1.0"
+edition = "2021"
+description = "open-cpu の拡張: PC・タブレットに接続したスマホ(1台〜複数台)をハードウェアアクセラレーターとして使う(USB/adb または TCP)"
+license = "MIT"
+repository = "https://github.com/aon-co-jp/open-cpu"
+
+[lib]
+name = "open_cpu_remote"
+path = "src/lib.rs"
+
+[[bin]]
+name = "open-cpu-worker"
+path = "src/bin/worker.rs"
+
+[dependencies]
+open-cpu = { path = ".." }
+
+[profile.release]
+opt-level = 3
+lto = true
