@@ -499,3 +499,7 @@ Reading into `serde_json::Value` gives almost no speed-up even with SIMD (188 ms
 - **WASM по-прежнему остаётся технологией для интерфейса.** Изменилось лишь то, что вызываемый им API теперь построен на Connect.
 - Интерфейсы, форма которых задана внешним стандартом (ACME, обратные вызовы OAuth, вебхуки сторонних сервисов, проверки работоспособности, статические файлы, OTLP), остаются обычным HTTP.
 - **Если есть сомнения — выбирайте Connect.**
+
+## 2026-11-20 低VRAM・VRAM無しでの安定高速化のノウハウ / Low-VRAM know-how
+日本語: VRAMが無い/小さいPC・VPSでAIを安定して速く動かす技術(分割重み・mmap・FP8・混合精度・小行列の直列化・プロンプト上限・同時実行上限、効かなかった手法も)は [aruaru-llm/docs/LOW-VRAM-KNOWHOW.md](https://github.com/aon-co-jp/aruaru-llm/blob/main/docs/LOW-VRAM-KNOWHOW.md) に集約。AIやLLMを扱う関連リポジトリはこれを参照し、同じ失敗を繰り返さない。
+English: Techniques for running AI stably and fast on machines with no or little VRAM (sharded weights, mmap, FP8, mixed precision, serial small GEMMs, prompt caps, concurrency caps, plus what did not work) are collected in the file above. Related repos that use AI/LLMs should follow it.
